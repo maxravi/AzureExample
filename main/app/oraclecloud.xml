@@ -15,7 +15,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
     <spring:beans>
         <spring:bean id="Bean" name="myComponent" class="com.javatransformertest.myComponent"/>
     </spring:beans>
-    <azure-storage:configuration name="Azure_Storage__Azure_Configuration" accountName="filetest11" accountKey="UUR2fkvt1X5Q5x+Rh7he//D9v+1ntXbGModv8MNCAVshWcr5H4QFT4XtB8CQSh5XFA2FG1iUdsVtEuYs9TF1Jw==" doc:name="Azure Storage: Azure Configuration"/>
+    <azure-storage:configuration name="Azure_Storage__Azure_Configuration" accountName="" accountKey="" doc:name="Azure Storage: Azure Configuration"/>
     <flow name="MicrosoftAzureFlow">
         <http:listener config-ref="HTTP_Listener_Configuration" path="/" doc:name="HTTP" allowedMethods="POST"/>
         <foreach doc:name="For Each" collection="#[message.inboundAttachments]">
