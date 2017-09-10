@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:azure-storage="http://www.mulesoft.org/schema/mule/azure-storage" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/azure-storage http://www.mulesoft.org/schema/mule/azure-storage/current/mule-azure-storage.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <file:connector name="File" outputPattern="#[flowVars.fname1]" writeToDirectory="/tmp" autoDelete="false" streaming="true" validateConnections="true" doc:name="File"/>
+    <spring:beans>
+        <spring:bean id="Bean" name="myComponent" class="com.javatransformertest.myComponent"/>
+    </spring:beans>
+    <azure-storage:configuration name="Azure_Storage__Azure_Configuration" accountName="filetest11" accountKey="UUR2fkvt1X5Q5x+Rh7he//D9v+1ntXbGModv8MNCAVshWcr5H4QFT4XtB8CQSh5XFA2FG1iUdsVtEuYs9TF1Jw==" doc:name="Azure Storage: Azure Configuration"/>
+    <flow name="MicrosoftAzureFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/" doc:name="HTTP" allowedMethods="POST"/>
+        <foreach doc:name="For Each" collection="#[message.inboundAttachments]">
+            <set-variable variableName="fname1" value="#[payload.dataSource.part.fileName]" doc:name="Variable"/>
+            <set-payload value="#[payload.dataSource.content]" doc:name="Set Payload"/>
+            <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+            <set-variable variableName="ffname" value="/tmp/#[flowVars.fname]" doc:name="Variable"/>
+            <file:outbound-endpoint path="/tmp" connector-ref="File" responseTimeout="10000" doc:name="File"/>
+            <dw:transform-message doc:name="Transform Message">
+                <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	container: "filetest11",
+	fileName: flowVars.fname,
+	filepath: flowVars.ffname
+} as :object {
+	class : "org.mule.modules.azurestorageservice.inputentity.BlobByPath"
+}]]></dw:set-payload>
+            </dw:transform-message>
+            <azure-storage:upload-blob-from-path config-ref="Azure_Storage__Azure_Configuration" doc:name="Azure Storage"/>
+        </foreach>
+        <logger message="File copied" level="INFO" doc:name="Logger"/>
+    </flow>
+</mule>
